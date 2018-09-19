@@ -33,8 +33,10 @@ def redirectPaper(re_url): #해당 논문으로 이동후 크롤링
         # Web 상의 Null 데이터 처리 조건문 시작
         if re_var2 == None :
             abs = "This paper not exist abstract"
-        else:
+        elif re_var2.find(id="Par1") != None:
             abs = re_var2.find(id="Par1").get_text() #abstract 처리
+        else:
+            abs = re_var2.find(class_="Para").get_text().replace(",", "")
 
         collect_author = re_var3.find_all(class_="authors__name")
         filter_aut = []
@@ -80,13 +82,13 @@ def redirectPaper(re_url): #해당 논문으로 이동후 크롤링
         data[6] = volume
         data[7] = issue
         data[8] = page
-        print(data) # 테스트
+        # print(data) # 테스트
         global rs_data # 결과 데이터 변수 전역화
         rs_data.append(data[:]) # data 배열을 슬라이스 하지 않으면 반복문을 빠져나올때 마지막 결과로 모든 배열이 채워짐
         print('', sep="\n")
     print(rs_data)
 
-def paperSearch_year(url, input):
+def paperSearch_year(url, input, input2):
     req = requests.get(url, headers={'User-Agent': ScholarConf.USER_AGENT})
     html = req.text
     soup = BeautifulSoup(html, 'html.parser')
@@ -94,13 +96,14 @@ def paperSearch_year(url, input):
     before_num = rs_num.get_text() # 총 결과수 태그 입력값 가져오기
     nu = re.findall("\d+", before_num) # 총 결과수 내의 숫자만 가져오기
     num = int(nu[0]) # int 타입으로 변환
+    print(num)
     if num%20 == 0:
         page_num = int(num/20)
     else:
         page_num = int((num/20)+1)
 
     for i in range(page_num):
-        url_p = basicUrl+"/page/"+str(i+1)+"?facet-content-type=Article&facet-journal-id=10994&sortOrder=newestFirst&date-facet-mode=between&facet-start-year="+input+"&previous-start-year=1986&facet-end-year="+input+"&previous-end-year=2018"
+        url_p = basicUrl+"/page/"+str(i+1)+"?facet-content-type=Article&facet-journal-id=10994&sortOrder=newestFirst&date-facet-mode=between&facet-start-year="+input+"&previous-start-year=1986&facet-end-year="+input2+"&previous-end-year=2018"
         print(url_p)
         req_page = requests.get(url_p, headers={'User-Agent': ScholarConf.USER_AGENT})
         html_page = req_page.text
@@ -111,7 +114,7 @@ def paperSearch_year(url, input):
             re_parse = p_url.get('href')
 
             global paperUrl
-            paperUrl.append("https://link.springer.com/" + re_parse)
+            paperUrl.append("https://link.springer.com" + re_parse)
 
     print(paperUrl)
     redirectPaper(paperUrl)
@@ -126,7 +129,7 @@ def paperSearch(url): #개별 논문 url 확인
         re_parse = p_url.get('href')
 
         global paperUrl
-        paperUrl.append("https://link.springer.com/"+re_parse)
+        paperUrl.append("https://link.springer.com"+re_parse)
 
     redirectPaper(paperUrl)
 
@@ -135,8 +138,8 @@ def url(input): #journal of machine leanring 목록
         url_in = basicUrl+"?sortOrder=newestFirst&facet-content-type=Article&facet-journal-id=10994"
         paperSearch(url_in)
     else:
-        url_in = basicUrl+"?facet-content-type=Article&facet-journal-id=10994&sortOrder=newestFirst&date-facet-mode=between&facet-start-year="+input+"&previous-start-year=1986&facet-end-year="+input+"&previous-end-year=2018"
-        paperSearch_year(url_in, input)
+        url_in = basicUrl+"?facet-content-type=Article&facet-journal-id=10994&sortOrder=newestFirst&date-facet-mode=between&facet-start-year="+input+"&previous-start-year=1986&facet-end-year="+input2+"&previous-end-year=2018"
+        paperSearch_year(url_in, input,input2)
 
 
 class ScholarConf(object):
@@ -144,6 +147,7 @@ class ScholarConf(object):
 
 
 input = sys.argv[1]
+input2 = sys.argv[2]
 url(input) # 프로그램 스타트
 
 header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
