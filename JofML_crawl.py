@@ -8,6 +8,9 @@ from bs4 import BeautifulSoup
 # 하단의 코드는 깃허브와 구글을 참조하여 만들어졌습니다.
 # 코드의 목적은 Journal of Machine Learning의 논문들을 간편하게 모을 수 있도록 만들어진
 # 웹 크롤러 입니다.
+# 실행 예시 $ python JofML_crawl.py 2008 2018
+#             -> 2008년에서 2018년의 모든 게제글 크롤링
+# 뒤의 인풋숫자 없이 실행은 가능하나 가장 최근의 20개 게재글만 가져옵니다.
 # 사용 환경은 Python 3.7, BeautifulSoup4, pip 18.0, requests 라이브러리를 이용해 만들었습니다.
 
 basicUrl = "https://link.springer.com/search"
@@ -148,6 +151,7 @@ class ScholarConf(object):
 
 input = sys.argv[1]
 input2 = sys.argv[2]
+
 url(input) # 프로그램 스타트
 
 header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
