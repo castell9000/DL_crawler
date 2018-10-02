@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 def test() :
-    req2 = requests.get("https://www.sciencedirect.com/science/article/pii/S0004370208001409", headers={'User-Agent': ScholarConf.USER_AGENT})
+    req2 = requests.get("https://www.sciencedirect.com/science/article/pii/S0004370211001305", headers={'User-Agent': ScholarConf.USER_AGENT})
     html2 = req2.text
     soup2 = BeautifulSoup(html2, 'html.parser')
     re_var1 = soup2.find("article")  # 크롤링 라이브러리 태그 범위 설정 변수
