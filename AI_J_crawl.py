@@ -16,54 +16,85 @@ input = 0
 rs_data = []
 check = ""
 paperUrl = [] #paperSearch() -> redirectPaper() 로 넘겨주는 변수 전역화
+gAut = []
 
-def redirectPaper(re_url): #해당 논문으로 이동후 크롤링
+def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
     data = [0 for _ in range(9)]  # data 변수 생성 및 형태 잡기
-
+    count = 0
+    print(len(re_url))
+    print(len(author))
     for r_u in re_url:
         print(r_u +"    test") # #paperSearch() -> redirectPaper() 파라메터 전달 확인
         req2 = requests.get(r_u, headers={'User-Agent': ScholarConf.USER_AGENT})
         html2 = req2.text
         soup2 = BeautifulSoup(html2, 'html.parser')
         re_var1 = soup2.find("article") # 크롤링 라이브러리 태그 범위 설정 변수
-        # abs_var = soup2.find(id="abstracts")
-        # print(abs_var)
         re_var2 = re_var1.find(class_="Head")
-        # print(re_var2)
         re_var3 = re_var1.find(id="aep-abstract-sec-id4")
-        re_var4 = re_var1.find(id="author_group")
-        re_var5 = re_var1.find(id="aep-keywords-id5")
+        re_var4 = re_var1.find(class_="AuthorGroups")
+        re_var5 = re_var1.find(class_="Keywords")
+        re_var6 = re_var1.find(class_="text-xs")
+
+        if re_var3 == None:
+            for x in range(5,10) :
+                re_var3 = re_var1.find(id="aep-abstract-sec-id"+str(x))
+                if re_var3 is not None:
+                    break
 
 
         if re_var3 == None:
-            abs_t = None
+            abs_t = "None"
         else:
-            print(re_var3.get_text())
             abs_t = re_var3.get_text()
 
-        if re_var4 == None:
-            filter_aut = "None"
-        else:
-            aut = re_var4.find_all('a')
-            for fa in aut:
-                filter_aut = fa.get_text()
         if re_var5 == None :
-            filter_key = "None"
+            fk = "None"
         else:
             key_b = re_var5.find_all(class_= "keyword")
             for kb in key_b :
-                filter_key = kb.get_text()
+                fk = fk +", "+ kb.get_text()
+
+        filter_key = fk[6:]
+        filter_tit = re_var2.get_text()
+        aut = re_var4.find_all('a')
+        if aut == []:
+            filter_aut = "None"
+            print(str(count)+" aa")
+        else:
+            filter_aut = author[count]
+            count = count + 1
+            print(str(count) + " cc")
+
+        pub = re_var6.get_text()
+        pub_b = pub.split(",")
+        result = []
+        for i in pub_b:
+            xyz = re.findall('\d+', i)
+            result.append(xyz)
+
+        volume = result[0]
+        issue = result[1]
+        date = result[2]
+        if result[3] == []:
+            page = "None"
+        else:
+            if len(result[3]) <2:
+                page = str(result[3])
+            else:
+                page = str(result[3][0]) + "-" + str(result[3][1])
 
         # 데이터 저장
-        data[0] = re_var2.get_text()
+        if filter_tit == "Editorial Board":
+            continue
+        data[0] = filter_tit
         data[1] = abs_t
         data[2] = r_u
         data[3] = filter_aut
         data[4] = filter_key
-        data[5] = 0 #date
-        data[6] = 0 #volume
-        data[7] = 0 #issue
-        data[8] = 0 #page
+        data[5] = date
+        data[6] = volume
+        data[7] = issue
+        data[8] = page
         # print(data) # 테스트
         global rs_data # 결과 데이터 변수 전역화
         rs_data.append(data[:]) # data 배열을 슬라이스 하지 않으면 반복문을 빠져나올때 마지막 결과로 모든 배열이 채워짐
@@ -74,14 +105,18 @@ def redirectPaper(re_url): #해당 논문으로 이동후 크롤링
 def paperSearch(): #개별 논문 url 확인
     z=0
     fArray = []
-    for x in range(1,2):
+    for x in range(1,6): # 2008~2011
         exp= 171+x
         for y in range(0,19):
             iN = y +1
             ex_url = basicUrl+"/"+str(exp)+"/issue/"+str(iN)
             fArray.append(ex_url)
+
+    # for x in range(1,89): # 2012 ~ now
+    #     exp= 176+x
+    #     ex_url = basicUrl+"/"+str(exp)+"/suppl/C"
+    #     fArray.append(ex_url)
     print(fArray)
-    print("aaaaa")
     for pList in fArray :
         req = requests.get(pList, headers={'User-Agent': ScholarConf.USER_AGENT})
         html = req.text
@@ -91,13 +126,19 @@ def paperSearch(): #개별 논문 url 확인
         print("check")
         if article == check:
             print("pass")
-            pass
+            continue
         check = article
         z= z+1
         print("check2")
         print(x)
         a_url = article.find_all("a")
-        # print(a_url)
+        aut = article.find_all(class_="text-s u-clr-grey8 js-article__item__authors")
+        for aa in aut :
+            a_aut = aa.get_text()
+            if aa == None:
+                a_aut = None
+            global gAut
+            gAut.append(a_aut)
         for p_url in a_url:
             x_url = p_url.get('href')
             if x_url[-4:] == ".pdf":
@@ -106,15 +147,9 @@ def paperSearch(): #개별 논문 url 확인
                 print(x_url)
                 global paperUrl
                 paperUrl.append("https://www.sciencedirect.com"+x_url)
-
-    redirectPaper(paperUrl)
-
-# def url(input):
-#     if input == 0 :
-#         url_in = basicUrl+"?sortOrder=newestFirst&facet-content-type=Article&facet-journal-id=10994"
-#         paperSearch(url_in)
-#     else:
-#         url_in = basicUrl+"?facet-content-type=Article&facet-journal-id=10994&sortOrder=newestFirst&date-facet-mode=between&facet-start-year="+input+"&previous-start-year=1986&facet-end-year="+input2+"&previous-end-year=2018"
+    print(gAut)
+    print(paperUrl)
+    redirectPaper(paperUrl, gAut)
 
 
 
@@ -124,6 +159,6 @@ class ScholarConf(object):
 
 paperSearch() # 프로그램 스타트
 
-# header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
-# pd = pandas.DataFrame(rs_data) # pandas 라이브러리로 csv 저장
-# pd.to_csv("test.csv", encoding="utf-8", header=header)
+header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
+pd = pandas.DataFrame(rs_data) # pandas 라이브러리로 csv 저장
+pd.to_csv("test.csv", encoding="utf-8", header=header)
