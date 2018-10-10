@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 # 실행 예시 $ python ES_A_crawl.py
 # 사용 환경은 Python 3.7, BeautifulSoup4, pip 18.0, requests 라이브러리를 이용해 만들었습니다.
 
-basicUrl = "https://www.sciencedirect.com/journal/expert-systems-with-applications/vol"
+basicUrl = "https://www.sciencedirect.com/search?qs=machine%20learning&pub=Expert%20Systems%20with%20Applications&show=25&sortBy=relevance&origin=jrnl_home&zone=search&cid=271506&years="
 input = 0
 rs_data = []
 check = ""
@@ -30,6 +30,11 @@ def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
         html2 = req2.text
         soup2 = BeautifulSoup(html2, 'html.parser')
         re_var1 = soup2.find("article") # 크롤링 라이브러리 태그 범위 설정 변수
+
+        if re_var1 == None:
+            print("no paper")
+            continue
+
         re_var2 = re_var1.find(class_="Head")
         re_var3 = re_var1.find(id="aep-abstract-sec-id4")# ~2013
         # re_var3 = re_var1.find(id="as0010") # v199~
@@ -37,8 +42,10 @@ def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
         re_var5 = re_var1.find(class_="Keywords")
         re_var6 = re_var1.find(class_="text-xs")
 
+
+
         if re_var3 == None: # 2008 - 2013
-            for x in range(5,40) :
+            for x in range(5,60) :
                 re_var3 = re_var1.find(id="aep-abstract-sec-id"+str(x))
                 if re_var3 is not None:
                     break
@@ -64,7 +71,6 @@ def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
 
         filter_tit = re_var2.get_text()
         aut = re_var4.find_all('a')
-        print(aut)
         if aut == []:
             filter_aut = "None"
             print(str(count)+" aa")
@@ -115,15 +121,19 @@ def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
     print(rs_data)
 
 
-def paperSearch(): #개별 논문 url 확인
+def paperSearch(year, numbers): #개별 논문 url 확인
     z=0
     fArray = []
-    for x in range(1,3): # 2008~2013
-        exp= 33+x
-        for y in range(0,19):
-            iN = y +1
-            ex_url = basicUrl+"/"+str(exp)+"/issue/"+str(iN)
-            fArray.append(ex_url)
+    off = []
+    offsets = int(numbers)//25
+
+    for of in range(0,offsets+1):
+        set = of * 25
+        off.append(str(set))
+
+    for y in off:
+        ex_url = basicUrl+year+"&offset="+y
+        fArray.append(ex_url)
 
     # for x in range(1,23): # 2012 ~ 2013v198
     #     exp= 176+x
@@ -140,11 +150,10 @@ def paperSearch(): #개별 논문 url 확인
         req = requests.get(pList, headers={'User-Agent': ScholarConf.USER_AGENT})
         html = req.text
         soup = BeautifulSoup(html, 'html.parser')
-        article = soup.find(id="article-list")
-
+        article = soup.find(id="main_content")
         print("check2")
         a_url = article.find_all("a")
-        aut = article.find_all(class_="text-s u-clr-grey8 js-article__item__authors")
+        aut = article.select("ol.Authors.hor")
 
         global check
         print("check")
@@ -161,6 +170,7 @@ def paperSearch(): #개별 논문 url 확인
             global gAut
             aasd= aasd+1
             print(aasd)
+            print(a_aut)
             gAut.append(a_aut)
 
 
@@ -171,7 +181,10 @@ def paperSearch(): #개별 논문 url 확인
             if x_url[-4:] == ".pdf":
                 pass
             else :
+
                 if check1 == x_url:
+                    pass
+                elif x_url == "/science/journal/09574174":
                     pass
                 else:
                     print(x_url)
@@ -188,7 +201,10 @@ class ScholarConf(object):
     USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:27.0) Gecko/20100101 Firefox/27.0'
 
 
-paperSearch() # 프로그램 스타트
+input = sys.argv[1]
+input2 = sys.argv[2]
+
+paperSearch(input, input2) # 프로그램 스타트
 
 header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
 pd = pandas.DataFrame(rs_data) # pandas 라이브러리로 csv 저장
