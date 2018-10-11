@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 # 실행 예시 $ python ES_A_crawl.py
 # 사용 환경은 Python 3.7, BeautifulSoup4, pip 18.0, requests 라이브러리를 이용해 만들었습니다.
 
-basicUrl = "https://www.sciencedirect.com/search?qs=machine%20learning&pub=Expert%20Systems%20with%20Applications&show=25&sortBy=relevance&origin=jrnl_home&zone=search&cid=271506&years="
+basicUrl = "https://www.sciencedirect.com/search?qs=machine%20learning&pub=Expert%20Systems%20with%20Applications&show=100&sortBy=relevance&origin=jrnl_home&zone=search&cid=271506&years="
 input = 0
 rs_data = []
 check = ""
@@ -125,10 +125,10 @@ def paperSearch(year, numbers): #개별 논문 url 확인
     z=0
     fArray = []
     off = []
-    offsets = int(numbers)//25
+    offsets = int(numbers)//100
 
     for of in range(0,offsets+1):
-        set = of * 25
+        set = of * 100
         off.append(str(set))
 
     for y in off:
@@ -183,11 +183,12 @@ def paperSearch(year, numbers): #개별 논문 url 확인
             else :
 
                 if check1 == x_url:
+                    print("123")
                     pass
                 elif x_url == "/science/journal/09574174":
+                    print("456")
                     pass
                 else:
-                    print(x_url)
                     check1 = x_url
                     global paperUrl
                     paperUrl.append("https://www.sciencedirect.com"+x_url)
