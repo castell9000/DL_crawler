@@ -6,17 +6,18 @@ from bs4 import BeautifulSoup
 
 # Created by prtscn@donga.ac.kr / Baek Ji HWan
 # 하단의 코드는 깃허브와 구글을 참조하여 만들어졌습니다.
-# 코드의 목적은 Expert Systems with applications의 논문들을 간편하게 모을 수 있도록 만들어진
+# 코드의 목적은 Ja의 논문들을 간편하게 모을 수 있도록 만들어진
 # 웹 크롤러 입니다.
 # 실행 예시 $ python ES_A_crawl.py
 # 사용 환경은 Python 3.7, BeautifulSoup4, pip 18.0, requests 라이브러리를 이용해 만들었습니다.
 
-basicUrl = "https://www.sciencedirect.com/search?qs=machine%20learning&pub=Expert%20Systems%20with%20Applications&show=25&sortBy=relevance&origin=jrnl_home&zone=search&cid=271506&years="
+basicUrl = "https://www.jair.org/index.php/jair/issue/view/"
 input = 0
 rs_data = []
 check = ""
 paperUrl = [] #paperSearch() -> redirectPaper() 로 넘겨주는 변수 전역화
 gAut = []
+ck =""
 
 def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
     data = [0 for _ in range(9)]  # data 변수 생성 및 형태 잡기
@@ -121,45 +122,32 @@ def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
     print(rs_data)
 
 
-def paperSearch(year, numbers): #개별 논문 url 확인
-    z=0
+def paperSearch(year): #개별 논문 url 확인
+
     fArray = []
-    off = []
-    offsets = int(numbers)//25
+    bYear = []
+    years = int(year) - 2008
+    setY = 1115+(years*3)
 
-    for of in range(0,offsets+1):
-        set = of * 25
-        off.append(str(set))
+    for of in range(setY, setY+3):
+        set = of
+        bYear.append(str(set))
 
-    for y in off:
-        ex_url = basicUrl+year+"&offset="+y
+    for y in bYear:
+        ex_url = basicUrl+y
         fArray.append(ex_url)
 
-    # for x in range(1,23): # 2012 ~ 2013v198
-    #     exp= 176+x
-    #     ex_url = basicUrl+"/"+str(exp)+"/suppl/C"
-    #     fArray.append(ex_url)
-
-    # for x in range(1,67): # 2013v199 ~ 2018v264
-    #     exp= 198+x
-    #     ex_url = basicUrl+"/"+str(exp)+"/suppl/C"
-    #     fArray.append(ex_url)
     print(fArray)
     aasd = 0
     for pList in fArray :
         req = requests.get(pList, headers={'User-Agent': ScholarConf.USER_AGENT})
         html = req.text
         soup = BeautifulSoup(html, 'html.parser')
-        article = soup.find(id="main_content")
+        article = soup.find(class_="section")
         a_url = article.find_all("a")
-        aut = article.select("ol.Authors.hor")
+        aut = article.find_all(class_="authors")
         print("check")
-        # global check
-        #
-        # if article == check:
-        #     print("pass")
-        #     continue
-        # check = article
+
 
         for aa in aut :
             a_aut = aa.get_text()
@@ -170,29 +158,22 @@ def paperSearch(year, numbers): #개별 논문 url 확인
             aasd= aasd+1
             print(aasd)
             print(a_aut)
-            gAut.append(a_aut)
-
-
-
-        check1 = ""
+            a_aut = a_aut.replace("\n", "")
+            gAut.append(a_aut.replace("\t", ""))
+        ck = 1
         for p_url in a_url:
             x_url = p_url.get('href')
-            if x_url[-4:] == ".pdf":
-                pass
-            else :
+            if ck == 1:
+                global paperUrl
+                ck = 3
+                paperUrl.append(x_url)
 
-                if check1 == x_url:
-                    pass
-                elif x_url == "/science/journal/09574174":
-
-                    pass
-                else:
-                    check1 = x_url
-                    global paperUrl
-                    paperUrl.append("https://www.sciencedirect.com"+x_url)
+            else:
+                ck = ck -1
+                continue
     print(gAut)
     print(paperUrl)
-    redirectPaper(paperUrl, gAut)
+    # redirectPaper(paperUrl, gAut)
 
 
 
@@ -201,10 +182,10 @@ class ScholarConf(object):
 
 
 input = sys.argv[1]
-input2 = sys.argv[2]
 
-paperSearch(input, input2) # 프로그램 스타트
 
-header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
-pd = pandas.DataFrame(rs_data) # pandas 라이브러리로 csv 저장
-pd.to_csv("test.csv", encoding="utf-8", header=header)
+paperSearch(input) # 프로그램 스타트
+
+# header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
+# pd = pandas.DataFrame(rs_data) # pandas 라이브러리로 csv 저장
+# pd.to_csv("test.csv", encoding="utf-8", header=header)

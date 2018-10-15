@@ -1,18 +1,25 @@
 import sys
 import pandas
 import re
+import time
 import requests
 from bs4 import BeautifulSoup
 
 def test() :
-    req2 = requests.get("https://www.sciencedirect.com/search?qs=machine%20learning&pub=Expert%20Systems%20with%20Applications&cid=271506&show=25&sortBy=relevance&years=2009&offset=250", headers={'User-Agent': ScholarConf.USER_AGENT})
+    req2 = requests.get("https://www.jair.org/index.php/jair/issue/view/1150")
+
     html2 = req2.text
+    time.sleep(10)
     soup2 = BeautifulSoup(html2, 'html.parser')
-    re_var1 = soup2.select("ol.search-result-wrapper")  # 크롤링 라이브러리 태그 범위 설정 변수
+
+    re_var1 = soup2.find(class_="section")  # 크롤링 라이브러리 태그 범위 설정 변수
+    re_var2 = re_var1.find_all(class_="authors")
 
     # re_var4 = re_var1.find(class_="text-xs")
 
-    print(re_var1)
+    # print(re_var1)
+
+    print(re_var2)
     # aut = re_var4.get_text()
     # test = aut.split(",")
     # result =[]
