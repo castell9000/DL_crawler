@@ -14,64 +14,46 @@ from bs4 import BeautifulSoup
 basicUrl = "https://www.jair.org/index.php/jair/issue/view/"
 input = 0
 rs_data = []
+volume = []
 check = ""
 paperUrl = [] #paperSearch() -> redirectPaper() 로 넘겨주는 변수 전역화
 gAut = []
 ck =""
+pageArr = []
 
-def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
+
+def redirectPaper(re_url, author, pages, vol): #해당 논문으로 이동후 크롤링
     data = [0 for _ in range(9)]  # data 변수 생성 및 형태 잡기
     count = 0
     print(len(re_url))
     print(len(author))
+    ccc = 0
     for r_u in re_url:
+
         fk = ""
         print(r_u +"    test") # #paperSearch() -> redirectPaper() 파라메터 전달 확인
         req2 = requests.get(r_u, headers={'User-Agent': ScholarConf.USER_AGENT})
         html2 = req2.text
         soup2 = BeautifulSoup(html2, 'html.parser')
-        re_var1 = soup2.find("article") # 크롤링 라이브러리 태그 범위 설정 변수
+        re_var1 = soup2.find(class_="article-details") # 크롤링 라이브러리 태그 범위 설정 변수
 
         if re_var1 == None:
             print("no paper")
             continue
 
-        re_var2 = re_var1.find(class_="Head")
-        re_var3 = re_var1.find(id="aep-abstract-sec-id4")# ~2013
-        # re_var3 = re_var1.find(id="as0010") # v199~
-        re_var4 = re_var1.find(class_="AuthorGroups")
-        re_var5 = re_var1.find(class_="Keywords")
-        re_var6 = re_var1.find(class_="text-xs")
-
-
-
-        if re_var3 == None: # 2008 - 2013
-            for x in range(5,60) :
-                re_var3 = re_var1.find(id="aep-abstract-sec-id"+str(x))
-                if re_var3 is not None:
-                    break
-
-        if re_var3 == None:
-            re_var3 = re_var1.find(id="as0010")
-
+        re_var2 = re_var1.find(class_="page-header")
+        re_var3 = re_var1.find(class_="article-abstract")
+        re_var5 = re_var1.find(class_="list-group-item date-published")
+        re_var4 = re_var1.find(class_="authors")
 
         if re_var3 == None:
             abs_t = "None"
         else:
             abs_t = re_var3.get_text()
 
-        if re_var5 == None :
-            fk = "None"
-            filter_key = fk
-        else:
-            key_b = re_var5.find_all(class_= "keyword")
-            for kb in key_b :
-                fk = fk +", "+ kb.get_text()
-            filter_key = fk[2:]
-
-
         filter_tit = re_var2.get_text()
-        aut = re_var4.find_all('a')
+        aut = re_var4.find_all(class_="article-author")
+
         if aut == []:
             filter_aut = "None"
             print(str(count)+" aa")
@@ -81,41 +63,32 @@ def redirectPaper(re_url, author): #해당 논문으로 이동후 크롤링
             print(filter_aut)
             print(str(count) + " cc")
 
-        pub = re_var6.get_text()
-        pub_b = pub.split(",")
-        result = []
-        for i in pub_b:
-            xyz = re.findall('\d+', i)
-            result.append(xyz)
+        filter_date = re_var5.get_text()
 
-        if len(result[0]) < 2:
-            volume = result[0]
-        else:
-            volume = str(result[0][0]) +"-"+str(result[0][1])
+        title = filter_tit.replace("\n", "")
+        abstract = abs_t.replace("\n", "")
+        date = filter_date.replace("Published", "")
+        date = date.replace("\n", "")
 
-        issue = result[1]
-        date = result[2]
-        if result[3] == []:
-            page = "None"
-        else:
-            if len(result[3]) <2:
-                page = str(result[3])
-            else:
-                page = str(result[3][0]) + "-" + str(result[3][1])
+        title = title.replace("\t", "")
+        abstract = abstract.replace("\t", "")
+        date = date.replace("\t", "")
+
+        filter_key = "None"
+        issue = "None"
 
         # 데이터 저장
-        if filter_tit == "Editorial Board & Publication Information" or filter_tit=="Publishers Note":
-            continue
-        data[0] = filter_tit
-        data[1] = abs_t
+        data[0] = title
+        data[1] = abstract
         data[2] = r_u
         data[3] = filter_aut
         data[4] = filter_key
         data[5] = date
-        data[6] = volume
+        data[6] = vol[ccc]
         data[7] = issue
-        data[8] = page
-        # print(data) # 테스트
+        data[8] = pages[ccc]
+        ccc = ccc+1
+        print(data) # 테스트
         global rs_data # 결과 데이터 변수 전역화
         rs_data.append(data[:]) # data 배열을 슬라이스 하지 않으면 반복문을 빠져나올때 마지막 결과로 모든 배열이 채워짐
         print('', sep="\n")
@@ -128,6 +101,7 @@ def paperSearch(year): #개별 논문 url 확인
     bYear = []
     years = int(year) - 2008
     setY = 1115+(years*3)
+    setV = 31 + (years*3)
 
     for of in range(setY, setY+3):
         set = of
@@ -146,10 +120,10 @@ def paperSearch(year): #개별 논문 url 확인
         article = soup.find(class_="section")
         a_url = article.find_all("a")
         aut = article.find_all(class_="authors")
+        pg = article.find_all(class_="pages")
         print("check")
 
-
-        for aa in aut :
+        for aa in aut :  # 저자명 배열에 담기 / 문자열 정리
             a_aut = aa.get_text()
             if aa == None:
                 a_aut = None
@@ -160,20 +134,34 @@ def paperSearch(year): #개별 논문 url 확인
             print(a_aut)
             a_aut = a_aut.replace("\n", "")
             gAut.append(a_aut.replace("\t", ""))
-        ck = 1
+            global volume
+            volume.append(str(setV))
+
+        setV = setV + 1
+
+        for pp in pg :  # 저자명 배열에 담기 / 문자열 정리
+            a_pg = pp.get_text()
+            if pp == None:
+                a_pg = None
+                print("None")
+            global pageArr
+            a_pg = a_pg.replace("\n", "")
+            pageArr.append(a_pg.replace("\t", ""))
+
         for p_url in a_url:
             x_url = p_url.get('href')
-            if ck == 1:
+            if len(x_url) == 54:
                 global paperUrl
-                ck = 3
                 paperUrl.append(x_url)
 
             else:
-                ck = ck -1
+                print("This url is not paper abs")
                 continue
     print(gAut)
+    print(volume)
+    print(pageArr)
     print(paperUrl)
-    # redirectPaper(paperUrl, gAut)
+    redirectPaper(paperUrl, gAut, pageArr, volume)
 
 
 
