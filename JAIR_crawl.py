@@ -107,9 +107,12 @@ def paperSearch(year): #개별 논문 url 확인
         set = of
         bYear.append(str(set))
 
-    for y in bYear:
-        ex_url = basicUrl+y
-        fArray.append(ex_url)
+    # for y in bYear:
+    #     ex_url = basicUrl+y
+    #     fArray.append(ex_url)
+    fArray.append("https://www.jair.org/index.php/jair/issue/view/1145")
+    fArray.append("https://www.jair.org/index.php/jair/issue/view/1150")
+    fArray.append("https://www.jair.org/index.php/jair/issue/view/1151")
 
     print(fArray)
     aasd = 0
@@ -174,6 +177,6 @@ input = sys.argv[1]
 
 paperSearch(input) # 프로그램 스타트
 
-# header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
-# pd = pandas.DataFrame(rs_data) # pandas 라이브러리로 csv 저장
-# pd.to_csv("test.csv", encoding="utf-8", header=header)
+header = ['Title', 'Abstract', 'Paper url', 'Author', 'Keyword', 'Publish_date', 'Volume', 'Issue', 'Pages'] #csv 헤더
+pd = pandas.DataFrame(rs_data) # pandas 라이브러리로 csv 저장
+pd.to_csv("test.csv", encoding="utf-8", header=header)
